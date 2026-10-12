@@ -68,6 +68,10 @@
       </header>
 
       <main class="content"><router-view /></main>
+      <footer class="app-foot">
+        <span>© {{ year }} OneHost · 管理后台</span>
+        <span class="hide-sm">Go · Vue 3 · Element Plus</span>
+      </footer>
     </div>
   </div>
 </template>
@@ -83,6 +87,7 @@ const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const year = new Date().getFullYear()
 
 const collapsed = ref(false)
 const drawer = ref(false)
@@ -165,4 +170,10 @@ function onCommand(cmd) {
 }
 .uname { font-size: 14px; }
 .content { flex: 1; min-width: 0; }
+.app-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 16px 24px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12.5px;
+  background: rgba(255, 255, 255, .6);
+}
+@media (max-width: 768px) { .hide-sm { display: none; } }
 </style>

@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
 const routes = [
-  { path: '/', redirect: '/console' },
+  { path: '/', component: () => import('../views/Home.vue') },
   { path: '/login', component: () => import('../views/Login.vue') },
   { path: '/register', component: () => import('../views/Register.vue') },
   {

@@ -8,12 +8,39 @@
 
 ---
 
+## 界面预览
+
+> 以下均为系统**实际运行截图**（无头浏览器全页抓取）。
+
+**营销首页**
+
+![营销首页](web/public/screenshots/home.png)
+
+| 用户控制台 | 云主机商城 |
+|---|---|
+| ![用户控制台](web/public/screenshots/console-dashboard.png) | ![云主机商城](web/public/screenshots/console-products.png) |
+
+| 我的实例 | 我的订单 |
+|---|---|
+| ![我的实例](web/public/screenshots/console-instances.png) | ![我的订单](web/public/screenshots/console-orders.png) |
+
+| 钱包 / 充值 | 管理后台 |
+|---|---|
+| ![钱包](web/public/screenshots/console-wallet.png) | ![管理后台](web/public/screenshots/admin-dashboard.png) |
+
+| 用户管理 | 登录页 |
+|---|---|
+| ![用户管理](web/public/screenshots/admin-users.png) | ![登录页](web/public/screenshots/login.png) |
+
+---
+
 ## 技术栈
 
 | 层 | 技术 |
 |----|------|
-| 后端 | Go 1.22、Gin、GORM、JWT、MySQL |
-| 前端 | Vue 3、Vite、Element Plus、Pinia、Vue Router、vue-i18n |
+| 后端 | Go 1.22、Gin、GORM、JWT（golang-jwt/v5）、bcrypt |
+| 数据库 | MySQL（生产默认）；SQLite（开发/测试，纯 Go 驱动，零依赖试跑） |
+| 前端 | Vue 3、Vite、Element Plus、Pinia、Vue Router（hash）、vue-i18n |
 | 虚拟化 | LXD / Incus（REST over TLS，客户端证书）、内置 Mock |
 | 支付 | 易支付（第四方网关，MD5 签名 + 异步回调） |
 | 部署 | Docker Compose（web + api + mysql 三容器） |
@@ -23,7 +50,8 @@
 ## 已实现功能
 
 **用户端**
-- 注册 / 登录（JWT）
+- 注册 / 登录（JWT，路由守卫按 `auth` / `admin` 鉴权）
+- 营销首页：产品特性、界面预览、套餐价格（实时拉取）、常见问题、CTA
 - 云主机商城：浏览在售产品、实时库存、按数量下单
 - 我的订单：余额支付、取消、续费
 - 钱包：余额、在线充值（易支付）、余额流水、未接网关时「模拟支付」
@@ -38,6 +66,18 @@
 - 节点管理：接入 LXD/Incus/Mock、配置客户端证书、连通性测试
 - 代金券：批量生成、作废
 - 系统设置：站点名称、注册开关、易支付配置
+
+---
+
+## 前端设计
+
+统一的站点化外壳 + 卡片式响应式布局，公开页与登录后控制台/后台共享同一套设计语言（同一组品牌令牌、页眉页脚风格一致）。
+
+- 设计体系：`web/src/styles/theme.css`（品牌色 `#6366f1 → #8b5cf6`、圆角、阴影、断点 992 / 768 / 420，并覆盖 Element Plus 主色）
+- 公共组件：`web/src/components/SiteHeader.vue`（玻璃拟态吸顶页眉 + 锚点导航 + 移动抽屉）、`SiteFooter.vue`（站脚）
+- 公开页：`views/Home.vue`（营销首页）、`views/Login.vue`、`views/Register.vue`
+- 登录后：`layouts/ConsoleLayout.vue`、`layouts/AdminLayout.vue`（深色可折叠侧栏 + 玻璃顶栏 + 底部页脚）
+- 路由：`/` 为公开首页，`/login`、`/register` 公开；`/console/*`、`/admin/*` 需登录（`/admin/*` 另需管理员）
 
 ---
 
@@ -63,10 +103,12 @@ onehost-mvp/
 └── web/                     # Vue3 前端
     ├── Dockerfile
     ├── nginx.conf
+    ├── public/screenshots/  # 运行截图（首页/控制台/后台）
     └── src/
-        ├── api/  store/  router/  i18n/
+        ├── api/  store/  router/  i18n/  styles/
+        ├── components/      # SiteHeader / SiteFooter 等公共组件
         ├── layouts/         # 控制台 / 管理后台布局
-        └── views/           # console/* 与 admin/*
+        └── views/           # Home / Login / Register + console/* + admin/*
 ```
 
 ---
@@ -99,6 +141,15 @@ cd api && go mod tidy && go run main.go        # http://localhost:8888
 
 # 前端（Node 18+）
 cd web && npm install && npm run dev           # http://localhost:8080，已代理 /api -> :8888
+```
+
+### 用 SQLite 快速试跑（无需 MySQL）
+
+```bash
+cd api
+ONEHOST_DB_DRIVER=sqlite ONEHOST_DB_PATH=./onehost.db \
+ONEHOST_JWT_SECRET=dev-secret ONEHOST_PORT=8888 \
+go run main.go
 ```
 
 ---
