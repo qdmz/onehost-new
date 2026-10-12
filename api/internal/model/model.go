@@ -83,8 +83,15 @@ type Instance struct {
 	DiskGB    int        `json:"disk_gb"`
 	Image     string     `gorm:"size:128" json:"image"`
 	ExpiredAt *time.Time `json:"expired_at"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
+
+	// 控制台接入信息（WebSSH / SFTP / VNC）
+	SSHPort     int    `gorm:"default:22" json:"ssh_port"`     // 实例 SSH 端口
+	SSHUser     string `gorm:"size:64;default:root" json:"ssh_user"` // SSH 登录用户
+	SSHPassword string `gorm:"size:128" json:"-"`              // SSH 登录口令（不下发前端）
+	VNCPort     int    `json:"vnc_port"`                       // VNC 端口，0 表示未启用
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // Node 虚拟化节点

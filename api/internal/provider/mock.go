@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"os"
 	"sync"
 )
 
@@ -59,5 +60,8 @@ func (m *Mock) State(ctx context.Context, id string) (string, error) {
 }
 
 func (m *Mock) IP(ctx context.Context, id string) (string, error) {
-	return "10.0.0.100", nil
+	if v := os.Getenv("ONEHOST_MOCK_IP"); v != "" {
+		return v, nil
+	}
+	return "127.0.0.1", nil
 }

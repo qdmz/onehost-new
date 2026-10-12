@@ -39,6 +39,15 @@ func RegisterRoutes(r *gin.Engine, h *Handler, cfg *config.Config) {
 	u.POST("/user/instances/:id/stop", h.StopInstance)
 	u.POST("/user/instances/:id/restart", h.RestartInstance)
 	u.DELETE("/user/instances/:id", h.DestroyInstance)
+	// 控制台：WebSSH / VNC / SFTP
+	u.GET("/user/instances/:id/console", h.InstanceConsoleInfo)
+	u.GET("/user/instances/:id/ssh", h.InstanceSSH)
+	u.GET("/user/instances/:id/vnc", h.InstanceVNC)
+	u.GET("/user/instances/:id/files", h.SFTPList)
+	u.GET("/user/instances/:id/files/download", h.SFTPDownload)
+	u.POST("/user/instances/:id/files/upload", h.SFTPUpload)
+	u.POST("/user/instances/:id/files/mkdir", h.SFTPMkdir)
+	u.DELETE("/user/instances/:id/files", h.SFTPDelete)
 
 	// 管理后台
 	a := api.Group("/admin")

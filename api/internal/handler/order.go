@@ -3,6 +3,8 @@ package handler
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -315,11 +317,23 @@ func (h *Handler) provision(orderID uint) {
 	}
 
 	name := fmt.Sprintf("oh-%d-%s", order.UserID, strings.ToLower(util.RandCode(6)))
+	isMock := node.Type == "mock" || node.Type == ""
 	inst := model.Instance{
 		Name: name, UserID: order.UserID, OrderID: order.ID,
 		Provider: node.Type, NodeID: node.ID, Status: "creating",
 		CPU: p.CPU, MemoryMB: p.MemoryMB, DiskGB: p.DiskGB, Image: p.Image,
 		ExpiredAt: order.ExpiredAt,
+	}
+	// 控制台接入参数：mock 节点直连内置的真实 SSH/VNC 靶机；真实 lxd/incus 走实例 IP。
+	if isMock {
+		inst.SSHPort = envInt("ONEHOST_MOCK_SSH_PORT", 2222)
+		inst.SSHUser = envStr("ONEHOST_MOCK_SSH_USER", "root")
+		inst.SSHPassword = envStr("ONEHOST_MOCK_SSH_PASS", "onehost")
+		inst.VNCPort = envInt("ONEHOST_MOCK_VNC_PORT", 5901)
+	} else {
+		inst.SSHPort = 22
+		inst.SSHUser = "root"
+		inst.SSHPassword = util.RandCode(16)
 	}
 	if err := h.DB.Create(&inst).Error; err != nil {
 		h.failProvision(&order, nil, &p, err)
@@ -367,4 +381,21 @@ func (h *Handler) failProvision(order *model.Order, inst *model.Instance, p *mod
 		h.DB.Model(&model.Product{}).Where("id = ?", p.ID).
 			UpdateColumn("stock", gorm.Expr("stock + ?", order.Quantity))
 	}
+}
+
+// envStr / envInt：读取环境变量，缺省回退。
+func envStr(k, def string) string {
+	if v := os.Getenv(k); v != "" {
+		return v
+	}
+	return def
+}
+
+func envInt(k string, def int) int {
+	if v := os.Getenv(k); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+	}
+	return def
 }

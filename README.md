@@ -57,6 +57,7 @@
 - 钱包：余额、在线充值（易支付）、余额流水、未接网关时「模拟支付」
 - 代金券兑换（事务 + 行锁，防重复兑换）
 - 我的实例：开机 / 关机 / 重启 / 销毁
+- **实例控制台**：WebSSH 终端（xterm.js）、SFTP 文件管理（上传/下载/新建目录/删除）、VNC 远程桌面（noVNC）——均为真实协议，经 WebSocket 与后端直连实例
 
 **管理后台**
 - 平台总览：用户数、订单数、实例数、累计收入、节点数
@@ -66,6 +67,27 @@
 - 节点管理：接入 LXD/Incus/Mock、配置客户端证书、连通性测试
 - 代金券：批量生成、作废
 - 系统设置：站点名称、注册开关、易支付配置
+
+---
+
+## 实例控制台（WebSSH / SFTP / VNC）
+
+实例开通时会写入控制台接入参数（`ssh_port` / `ssh_user` / `vnc_port`，口令不序列化到接口）。运行中实例的卡片提供三个入口：
+
+| 能力 | 后端 | 前端 | 协议 |
+|------|------|------|------|
+| WebSSH 终端 | `GET /api/v1/user/instances/:id/ssh`（WebSocket，SSH 直连 + PTY） | `components/ConsoleTerminal.vue`（xterm.js） | 文本帧=控制 JSON，二进制帧=原始字节；支持 `{type:resize,cols,rows}` |
+| SFTP 文件管理 | `GET/POST/DELETE /api/v1/user/instances/:id/files*` | `components/FileManager.vue` | 列目录 / 下载 / 上传 / 新建目录 / 删除 |
+| VNC 远程桌面 | `GET /api/v1/user/instances/:id/vnc`（WebSocket，RFB 透传） | `components/VncViewer.vue`（noVNC） | RFB over WebSocket |
+
+- WebSocket 鉴权走 `?token=<JWT>`（`AuthRequired` 中间件支持查询参数）。
+- **反向代理必须透传 WebSocket 升级头**：`nginx.conf` 已配置 `Upgrade` / `Connection: upgrade` 与长超时。
+- 仓库不含真实虚拟化环境，配套 `api/testkit/` 提供**真实协议**的自建靶机用于联调：
+  - `testkit/sshd`：真实 SSH 服务端（主机密钥、口令认证、PTY、sftp 子系统）
+  - `testkit/vncd`：最小 RFB 3.8 服务端（兼容 noVNC）
+  - `testkit/e2e`：端到端联调程序（登录→充值→下单→开通→控制台信息→SFTP 增删传→WebSSH 回显→VNC 握手）
+
+**真实验证结论**：控制台链路（含经反向代理的 WebSocket 隧道）端到端 **13/13 通过**；沙箱内无真实 LXD/Incus，故控制台靶机为真实 SSH/VNC 协议实现，非模拟。
 
 ---
 
