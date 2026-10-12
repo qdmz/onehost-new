@@ -1,0 +1,15 @@
+# 环境与密钥
+.env
+server/config.yaml
+
+# Go
+api/onehost
+api/vendor/
+
+# Node
+web/node_modules/
+web/dist/
+
+# 其它
+*.log
+.DS_Store

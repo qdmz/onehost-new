@@ -1,0 +1,18 @@
+server:
+  port: 8888
+  mode: release
+
+database:
+  host: 127.0.0.1
+  port: 3306
+  name: onehost
+  user: root
+  password: ""
+
+jwt:
+  secret: change-me-in-production
+  expire_hours: 168
+
+app:
+  public_url: http://localhost
+  site_name: OneHost
